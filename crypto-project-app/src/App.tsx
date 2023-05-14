@@ -1,40 +1,55 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import CryptoList from './CryptoList';
+import CryptoDetails from './CryptoDetails';
 
-import './App.css'
-import Header from './Header'
-import CoinDetails from './CoinDetails'
-import Items from './Items'
-import { useState } from 'react'
-
-
-// const Item =(props)=>(
-// <div className='item flex'>
-//   <div className='name'>{`${props.content.name}`} </div>
-//   <div className='price'>{`${props.content.price}`} </div>
-//   <div className='marketCup'> {`${props.content.marketCup}`} </div> 
-//   <button onClick={()=>changeId(props.content.id)}>Check</button>
-// </div>
-// )
-
-// const checkCoin=(id)=>{
-//   console.log(id)
-// }
-const App =(props:Object)=> {
-  // const [id,setId] =useState('')
-
-  // const changeId=()=>{
-  //   setId(id)
-  // }
- 
-  
-
-  return (
-    <>
-    <Header/>
-    <CoinDetails/>
-    <Items data={props}/>
-   
-    </>
-  )
+interface Crypto {
+  id: string;
+  name: string;
+  priceUsd: number;
+  rank: number;
 }
 
-export default App
+function App() {
+  const [cryptoData, setCryptoData] = useState<Crypto[]>([]);
+  const [selectedCrypto, setSelectedCrypto] = useState<Crypto | null>(null);
+
+  useEffect(() => {
+    axios.get<Crypto[]>('https://api.coincap.io/v2/assets')
+      .then(response => {
+        setCryptoData(response.data.data);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }, []);
+
+  const handleSelectCrypto = (crypto: Crypto) => {
+    setSelectedCrypto(crypto);
+  };
+
+  const handleMoveToTop = (id: string) => {
+    const selectedCrypto = cryptoData.find(crypto => crypto.id === id);
+    const filteredCryptoData = cryptoData.filter(crypto => crypto.id !== id);
+    setCryptoData([selectedCrypto!, ...filteredCryptoData]);
+    setSelectedCrypto(selectedCrypto!);
+  };
+
+  const handleClearSelectedCrypto = () => {
+    setSelectedCrypto(null);
+  };
+
+  return (
+    <div className='container'>
+      <h1>Cryptocurrencies</h1>
+      <div className='crypto-details'>
+        <CryptoDetails selectedCrypto={selectedCrypto} onClearSelectedCrypto={handleClearSelectedCrypto} />
+      </div>
+      <div className="crypto-list">
+        <CryptoList cryptoData={cryptoData} onSelectCrypto={handleSelectCrypto} />
+      </div>
+    </div>
+  );
+}
+
+export default App;
